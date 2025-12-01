@@ -73,7 +73,7 @@ const callGemini = async (prompt, systemInstruction = "") => {
   }
 };
 
-const HowdyPortal = () => {
+const App = () => {
   // --- THEME STATE ---
   const [theme, setTheme] = useState('light'); // 'light', 'dark', 'contrast'
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -94,7 +94,7 @@ const HowdyPortal = () => {
       hover: 'hover:bg-gray-50',
       icon: 'text-gray-400',
       input: 'bg-gray-50 border-gray-200 text-slate-800',
-      cardHover: 'hover:shadow-md hover:border-red-100',
+      cardHover: 'hover:shadow-xl hover:shadow-red-900/10 hover:border-red-200',
       buttonPrimary: 'bg-[#500000] text-white hover:bg-red-900',
       activeNav: 'bg-[#500000] text-white',
       inactiveNav: 'text-gray-600 hover:bg-gray-50 hover:text-[#500000]'
@@ -240,6 +240,8 @@ const HowdyPortal = () => {
     setActiveCategory(id);
     setCurrentView(id);
     if (!sidebarOpen) setSidebarOpen(true);
+    // Note: We don't auto-expand menu here anymore based on user preference to separate actions,
+    // unless it's a closed sidebar opening scenario handled in the button click.
     setExpandedMenu(prev => ({...prev, [id]: true}));
   };
 
@@ -257,7 +259,7 @@ const HowdyPortal = () => {
     setExpandedMenu(prev => ({...prev, [link.id]: true}));
   };
 
-  // --- SEARCH LOGIC ---
+  // --- DATA DEFINTIONS (Moved up for Search Scope) ---
   const navItems = [
     { 
       id: 'Academics', 
@@ -287,7 +289,79 @@ const HowdyPortal = () => {
     { id: 'Campus Services', icon: <Monitor size={18} aria-hidden="true" />, subItems: ['Housing Portal', 'Dining & Meal Plans', 'Parking Services'] },
   ];
 
-  // Synonyms for intuitive searching
+  // Extended Data for Detail Views (Source of Truth for "All Services")
+  const detailViewData = {
+    'Academics': [
+        { title: 'Canvas LMS', desc: 'Access courses and assignments' },
+        { title: 'TAMU Gmail', desc: 'University email access' },
+        { title: 'Unofficial Transcript', desc: 'View academic history instantly' },
+        { title: 'Dates & Deadlines', desc: 'Academic calendar and critical dates' },
+        { title: 'UGDP', desc: 'Undergraduate Degree Planner & Progress' },
+        { title: 'Aggie Schedule Builder', desc: 'Optimize your class schedule' },
+        { title: 'View Grades', desc: 'Midterm and Final grade reports' },
+        { title: 'View Schedule', desc: 'My weekly class grid' },
+        { title: 'Official Transcript', desc: 'Order official PDF or paper copies' },
+        { title: 'Apply for Graduation', desc: 'Degree application status' },
+        { title: 'Core Curriculum', desc: 'Track core requirements' },
+        { title: 'Final Exam Schedule', desc: 'Dates and times for finals' },
+        { title: 'Transfer Equivalency', desc: 'See how credits transfer' },
+        { title: 'Grad Resources', desc: 'OGAPS and thesis info' },
+        { title: 'Teaching Resources', desc: 'For TAs and Faculty' }
+    ],
+    'Registration': [
+        { title: 'Search Classes', desc: 'Find open sections' },
+        { title: 'Add/Drop', desc: 'Register for classes' },
+        { title: 'Registration Status', desc: 'Check holds and time tickets' },
+        { title: 'NSC Registration', desc: 'Sign up for orientation' },
+        { title: 'Registration History', desc: 'View past schedules' },
+        { title: 'Lab Safety', desc: 'Required safety acknowledgements' },
+        { title: 'Excess Credit Hours', desc: 'View counter for tuition cap' },
+        { title: 'Withdrawal', desc: 'Process for dropping all courses' }
+    ],
+    'Resources': [
+        { title: 'Tell Somebody', desc: 'Report concerns or incidents' },
+        { title: 'Student Rules', desc: 'University policies and code' },
+        { title: 'Research Compliance', desc: 'IRB and safety training' },
+        { title: 'Library', desc: 'Databases, room bookings, and hours' },
+        { title: 'Transport', desc: 'Bus routes and maps' },
+        { title: 'IT Help', desc: 'Service desk tickets and status' },
+        { title: 'Career Center', desc: 'HireAggies and resume review' },
+        { title: 'Disability Services', desc: 'Accommodations and support' },
+        { title: 'Veterans Services', desc: 'Benefits and resources' },
+        { title: 'Counseling (CAPS)', desc: 'Mental health support' },
+        { title: 'International Services', desc: 'Visa and immigration help' }
+    ],
+    'Social Life': [
+        { title: 'Sports Pass', desc: 'Pull tickets and manage pass' },
+        { title: 'Campus Events', desc: 'What is happening today' },
+        { title: 'Student Orgs', desc: 'Find a club on MaroonLink' },
+        { title: 'Rec Sports', desc: 'Gym hours and intramurals' },
+        { title: 'MSC Box Office', desc: 'Tickets for shows and games' },
+        { title: 'Greek Life', desc: 'Fraternity and Sorority life' },
+        { title: 'Volunteer', desc: 'Service opportunities' },
+        { title: 'Aggie Cinema', desc: 'Movie screenings on campus' }
+    ],
+    'Finance & Tuition': [
+        { title: 'Pay Bill', desc: 'View balance and make payments' },
+        { title: 'Financial Aid Portal', desc: 'Award status and requirements' },
+        { title: '1098-T Tax Form', desc: 'Download tax documents' },
+        { title: 'Scholarships', desc: 'University scholarship application' },
+        { title: 'Direct Deposit', desc: 'Setup refund account' },
+        { title: 'Short Term Loans', desc: 'Emergency funding application' },
+        { title: 'Tuition Calculator', desc: 'Estimate semester costs' }
+    ],
+    'Campus Services': [
+        { title: 'Housing Portal', desc: 'Room selection and maintenance' },
+        { title: 'Dining & Meal Plans', desc: 'Menus and plan changes' },
+        { title: 'Parking Services', desc: 'Permits and citations' },
+        { title: 'Code Maroon', desc: 'Emergency alert settings' },
+        { title: 'ID Card Services', desc: 'Aggie Card replacement' },
+        { title: 'Laundry Alert', desc: 'Check machine availability' },
+        { title: 'Print Kiosks', desc: 'Find and manage printing' }
+    ]
+  };
+
+  // --- SEARCH LOGIC (Updated to use detailViewData) ---
   const synonyms = {
     'money': 'Finance & Tuition',
     'pay': 'Finance & Tuition',
@@ -304,7 +378,14 @@ const HowdyPortal = () => {
     'help': 'IT Help',
     'wifi': 'IT Help',
     'book': 'Library',
-    'study': 'Library'
+    'study': 'Library',
+    'canvas': 'Canvas LMS',
+    'lms': 'Canvas LMS',
+    'class': 'Canvas LMS',
+    'email': 'TAMU Gmail',
+    'mail': 'TAMU Gmail',
+    'ticket': 'Sports Pass',
+    'football': 'Sports Pass'
   };
 
   useEffect(() => {
@@ -316,9 +397,8 @@ const HowdyPortal = () => {
     const query = searchQuery.toLowerCase();
     const results = [];
 
-    // 1. Check direct matches in nav items and subitems
+    // 1. Check direct matches in nav items (Categories)
     navItems.forEach(category => {
-      // Category Match
       if (category.id.toLowerCase().includes(query)) {
         results.push({ 
           type: 'Category', 
@@ -328,26 +408,32 @@ const HowdyPortal = () => {
           action: () => handleNavClick(category.id)
         });
       }
-      // Sub-item Match
-      category.subItems.forEach(sub => {
-        if (sub.toLowerCase().includes(query)) {
-           results.push({ 
-             type: 'Service', 
-             title: sub, 
-             subtitle: category.id,
-             id: category.id, // Parent ID for navigation
-             action: () => handleNavClick(category.id) 
-           });
-        }
-      });
     });
 
-    // 2. Check Synonyms
+    // 2. Check matches in Detail View Data (The Cards)
+    // This loops through ALL items including new ones like Canvas, Sports Pass, etc.
+    Object.keys(detailViewData).forEach(categoryId => {
+        const items = detailViewData[categoryId];
+        items.forEach(item => {
+            // Check Title AND Description for broad matching
+            if (item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query)) {
+                results.push({
+                    type: 'Service',
+                    title: item.title,
+                    subtitle: item.desc, 
+                    id: categoryId,
+                    action: () => handleNavClick(categoryId) // Navigates to the parent view where the card lives
+                });
+            }
+        });
+    });
+
+    // 3. Check Synonyms
     Object.keys(synonyms).forEach(key => {
       if (key.includes(query)) {
-        // Find the mapped item (could be category or sub-item)
         const targetName = synonyms[key];
-        // Try to find if it's a category
+        
+        // Is target a Category?
         const catMatch = navItems.find(n => n.id === targetName);
         if (catMatch) {
           results.push({ 
@@ -358,30 +444,31 @@ const HowdyPortal = () => {
             action: () => handleNavClick(catMatch.id)
           });
         } else {
-            // Must be a subitem, find parent
-            navItems.forEach(n => {
-                if (n.subItems.includes(targetName)) {
+            // Must be a service in detailViewData
+            Object.keys(detailViewData).forEach(catId => {
+                const serviceMatch = detailViewData[catId].find(s => s.title === targetName);
+                if (serviceMatch) {
                     results.push({
                         type: 'Suggestion',
-                        title: targetName,
+                        title: serviceMatch.title,
                         subtitle: `Matches "${key}"`,
-                        id: n.id,
-                        action: () => handleNavClick(n.id)
-                    })
+                        id: catId,
+                        action: () => handleNavClick(catId)
+                    });
                 }
-            })
+            });
         }
       }
     });
 
-    // Remove duplicates
+    // Remove duplicates based on title
     const uniqueResults = results.filter((v,i,a)=>a.findIndex(v2=>(v2.title===v.title))===i);
 
     setSearchResults(uniqueResults);
   }, [searchQuery]);
 
 
-  // --- DATA ---
+  // --- OTHER DATA ---
   const newsItems = [
     {
       title: "New Ticket Pull System Rolling Out",
@@ -428,7 +515,7 @@ const HowdyPortal = () => {
              <div className="w-10 h-10 bg-white rounded text-[#500000] flex items-center justify-center font-bold text-xl shadow-sm" aria-hidden="true">
                A&M
              </div>
-             <span className="font-bold text-xl text-white tracking-tight">Howdy Portal</span>
+             <span className="font-bold text-xl text-white tracking-tight">Howdy</span>
            </div>
            <a href="#" className="text-white/80 hover:text-white text-sm font-medium flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-white rounded px-2 py-1">
              <Lock size={14} aria-hidden="true" />
@@ -536,14 +623,21 @@ const HowdyPortal = () => {
         aria-label="Main Navigation"
       >
         <div className={`h-24 flex items-center justify-center border-b ${t.border} p-6`}>
-          <div className="flex items-center gap-3 w-full">
+          <button 
+            onClick={() => {
+              setCurrentView('dashboard');
+              setActiveCategory('Home');
+            }}
+            className="flex items-center gap-3 w-full text-left hover:opacity-80 transition-opacity focus:outline-none"
+            aria-label="Go to Dashboard"
+          >
             <div className={`w-12 h-12 ${t.accent} rounded text-white flex items-center justify-center font-bold text-xl flex-shrink-0 transition-colors`} aria-hidden="true">
               A&M
             </div>
             {sidebarOpen && (
-              <span className={`font-bold text-xl tracking-tight ${t.accentText}`}>Howdy Portal</span>
+              <span className={`font-bold text-xl tracking-tight ${t.accentText}`}>Howdy</span>
             )}
-          </div>
+          </button>
         </div>
 
         {/* Search Bar Container */}
@@ -554,8 +648,8 @@ const HowdyPortal = () => {
               <div className="relative">
                 <input 
                   type="text" 
-                  aria-label="Search resourcesi"
-                  placeholder="Search, select, and gig 'em"
+                  aria-label="Search resources"
+                  placeholder="Search resources..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -628,41 +722,51 @@ const HowdyPortal = () => {
         <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-1" aria-label="Sidebar Menu">
           {navItems.map((item) => (
             <div key={item.id}>
-              <button
-                onClick={() => {
-                   if (sidebarOpen) {
-                     // Set active state for navigation
-                     setActiveCategory(item.id);
-                     setCurrentView(item.id);
-                     // Toggle menu
-                     toggleMenu(item.id);
-                   } else {
-                     setSidebarOpen(true);
-                     // If opening sidebar, expand this item
-                     setActiveCategory(item.id);
-                     setCurrentView(item.id);
-                     setExpandedMenu(prev => ({...prev, [item.id]: true}));
-                   }
-                }}
-                aria-expanded={expandedMenu[item.id]}
-                aria-haspopup="true"
-                className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#500000] ${
+              {/* Flex Container for Row */}
+              <div 
+                className={`w-full flex items-center rounded-lg transition-colors duration-200 ${
                   activeCategory === item.id 
                     ? t.activeNav 
                     : t.inactiveNav
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  {item.icon}
-                  {sidebarOpen && <span className="font-medium text-sm">{item.id}</span>}
-                </div>
+                {/* Main Action Button (Text + Icon) */}
+                <button
+                  onClick={() => {
+                     if (!sidebarOpen) {
+                       setSidebarOpen(true);
+                       handleNavClick(item.id);
+                     } else {
+                       handleNavClick(item.id);
+                     }
+                  }}
+                  className="flex-1 flex items-center gap-3 p-3 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#500000] rounded-l-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {item.icon}
+                    {sidebarOpen && <span className="font-medium text-sm">{item.id}</span>}
+                  </div>
+                </button>
+                
+                {/* Chevron/Toggle Button (Only if sidebar open & has subitems) */}
                 {sidebarOpen && item.subItems.length > 0 && (
-                  expandedMenu[item.id] 
-                    ? <ChevronDown size={14} className={activeCategory === item.id ? 'text-current' : t.textSec} aria-hidden="true" /> 
-                    : <ChevronRight size={14} className={t.textSec} aria-hidden="true" />
+                   <button
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       toggleMenu(item.id);
+                     }}
+                     className="p-3 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#500000] rounded-r-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                     aria-label={expandedMenu[item.id] ? "Collapse submenu" : "Expand submenu"}
+                   >
+                     {expandedMenu[item.id] 
+                        ? <ChevronDown size={14} className={activeCategory === item.id ? 'text-current' : t.textSec} aria-hidden="true" /> 
+                        : <ChevronRight size={14} className={activeCategory === item.id ? 'text-current' : t.textSec} aria-hidden="true" />
+                     }
+                   </button>
                 )}
-              </button>
+              </div>
               
+              {/* Submenu */}
               {sidebarOpen && expandedMenu[item.id] && item.subItems.length > 0 && (
                 <div className={`ml-9 mt-1 space-y-1 border-l-2 ${t.border} pl-2`}>
                   {item.subItems.map((sub, idx) => (
@@ -845,7 +949,7 @@ const HowdyPortal = () => {
                           <div className={`p-3 rounded-lg transition-colors ${
                             theme === 'contrast' 
                             ? 'bg-yellow-400 text-black' 
-                            : 'bg-red-200 text-[#500000] dark:bg-red-800 dark:text-red-100 group-hover:bg-[#500000] group-hover:text-white'
+                            : 'bg-red-100 text-[#500000] dark:bg-red-900/20 dark:text-red-300 group-hover:bg-[#500000] group-hover:text-white'
                           }`}>
                             {link.icon}
                           </div>
@@ -887,17 +991,18 @@ const HowdyPortal = () => {
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {navItems.find(n => n.id === currentView)?.subItems.map((subItem, idx) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {(detailViewData[currentView] || []).map((item, idx) => (
                          <div key={idx} className={`p-6 border ${t.border} rounded-lg hover:border-[#500000] cursor-pointer group transition-all`}>
-                            <h3 className={`font-bold text-lg ${t.text} group-hover:${t.accentText} transition-colors flex items-center justify-between`}>
-                              {subItem}
+                            <h3 className={`font-bold text-lg ${t.text} group-hover:${t.accentText} transition-colors flex items-center justify-between mb-2`}>
+                              {item.title}
                               <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                             </h3>
+                            <p className={`text-xs ${t.textSec}`}>{item.desc}</p>
                          </div>
                        ))}
-                       {(!navItems.find(n => n.id === currentView)?.subItems.length) && (
-                         <div className={`col-span-2 p-8 text-center border-2 border-dashed ${t.border} rounded-xl`}>
+                       {(!detailViewData[currentView] || detailViewData[currentView].length === 0) && (
+                         <div className={`col-span-full p-8 text-center border-2 border-dashed ${t.border} rounded-xl`}>
                             <p className={`${t.textSec}`}>No specific services listed for this category yet.</p>
                          </div>
                        )}
@@ -1076,4 +1181,4 @@ const HowdyPortal = () => {
   );
 };
 
-export default HowdyPortal;
+export default App;
